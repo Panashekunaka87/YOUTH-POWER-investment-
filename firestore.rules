@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // User: { uid, email, displayName, balance, role, referralCode, referredBy, createdAt }
+    // Deposit: { uid, amount, method, status, timestamp, proofUrl }
+    // Withdrawal: { uid, amount, method, status, timestamp }
+    // Investment: { uid, amount, dailyReturn, startDate, lastClaimDate }
+    // Task: { title, reward, adUrl, duration }
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "panashekunaka84@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'balance', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.balance is number &&
+             data.role in ['user', 'admin'];
+    }
+
+    function isValidDeposit(data) {
+      return data.keys().hasAll(['uid', 'amount', 'method', 'status', 'timestamp', 'proofUrl']) &&
+             data.uid is string &&
+             data.amount is number && data.amount >= 1 &&
+             data.method in ['ecocash', 'visa'] &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             data.proofUrl is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && 
+                      (request.resource.data.role == 'user' || (request.resource.data.role == 'admin' && request.auth.token.email == "panashekunaka84@gmail.com")) && 
+                      request.resource.data.balance == 0;
+      allow update: if isAdmin() || (isOwner(userId) && 
+                      request.resource.data.role == resource.data.role &&
+                      (request.resource.data.balance == resource.data.balance || request.resource.data.balance < resource.data.balance));
+    }
+
+    match /deposits/{depositId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && 
+                      isValidDeposit(request.resource.data) &&
+                      request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+    }
+
+    match /withdrawals/{withdrawalId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid &&
+                      request.resource.data.amount >= 1 && request.resource.data.amount <= 500 &&
+                      request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+    }
+
+    match /investments/{investmentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.uid || isAdmin());
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

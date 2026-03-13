@@ -1,0 +1,8 @@
+{
+  "name": "Copy of YOUTHS POWER 🫂",
+  "description": "A high-yield investment and task-based platform for youth empowerment, featuring daily returns, ad-watching rewards, and secure deposit/withdrawal management.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

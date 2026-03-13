@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and balance information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "balance": { "type": "number" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "withdrawalCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "balance", "role"]
+    },
+    "Deposit": {
+      "title": "Deposit",
+      "description": "Deposit request for approval",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["ecocash", "visa"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "proofUrl": { "type": "string" }
+      },
+      "required": ["uid", "amount", "method", "status", "timestamp"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Withdrawal request",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "amount", "method", "status", "timestamp"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "Active investment plan",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "dailyReturn": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "lastClaimDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "amount", "dailyReturn", "startDate"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Ad watching task",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "reward": { "type": "number" },
+        "adUrl": { "type": "string" },
+        "duration": { "type": "number" }
+      },
+      "required": ["title", "reward", "adUrl"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/deposits/{depositId}": {
+      "schema": "Deposit",
+      "description": "Deposit requests"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "Withdrawal requests"
+    },
+    "/investments/{investmentId}": {
+      "schema": "Investment",
+      "description": "Active investments"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Available tasks"
+    }
+  }
+}
